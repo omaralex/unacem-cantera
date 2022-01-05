@@ -13,7 +13,7 @@ import CertificateDesktop from "@pages/desktop/Certificate";
 const ContentDesktopView = styled.div`
   padding: 28px 16px 70px;
   background: #ffffff;
-  height: 100vh;
+  height: 120%;
   margin: 0 5%;
   border-radius: 8px;
   max-width: 1169px;

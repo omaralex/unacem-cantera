@@ -65,12 +65,23 @@ const QuickQuestionary = ({
   };
 
   const onClickSendResponse = () => {
-    fetchResponse(
-      token,
-      videoSelected?.item?.idCurso,
-      videoSelected?.item?.idVideo,
-      responses
-    );
+    const listBoolean = responses.map((item) => {
+      const newItem = item.alternativas.find(
+        (item) => item?.respuesta != undefined
+      );
+      return !newItem ? false : true;
+    });
+    const validResponse = listBoolean.includes(false);
+    if (!validResponse) {
+      fetchResponse(
+        token,
+        videoSelected?.item?.idCurso,
+        videoSelected?.item?.idVideo,
+        responses
+      );
+    } else {
+      alert("Es necesario seleccionar una de las alternativas");
+    }
   };
 
   return (
@@ -80,7 +91,7 @@ const QuickQuestionary = ({
           <Title type="lg" style={{ color: "#E52820" }}>
             {" "}
             {`Lección ${
-              videoSelected?.item?.index || 1
+              (videoSelected?.index + 1) || 1
             }: Repasando lo aprendido.`}
           </Title>
         </div>
@@ -130,7 +141,7 @@ const QuickQuestionary = ({
               justifyContent: "flex-end",
             }}
           >
-            <Link onClick={() => {}}>
+            <Link onClick={onFinished}>
               <span>Continuar siguiente lección</span>
               <img src={ArrowDoubleRight} />
             </Link>

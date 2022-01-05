@@ -50,6 +50,7 @@ const Questionary = () => {
   const [showQuestions, setShowQuestions] = useState(false);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     fetchQuestionsCourse(token, idCurso);
   }, []);
 
@@ -83,15 +84,25 @@ const Questionary = () => {
   }, [dataResponseQuestionary]);
 
   const onSelectedAlternative = (index, index_) => {
+    let isValidResponse = true;
     const responses_ = questionary[index].alternativas.map((element, i) => {
-      if (i === index_) element["respuesta"] = true;
-      else element["respuesta"] = false;
+      if (i === index_) {
+        isValidResponse = element.esRespuestaCorrecta;
+        element["respuesta"] = true;
+      } else {
+        element["respuesta"] = false;
+      }
       return element;
     });
-
     let copyResponses = [...questionary];
     copyResponses[index]["alternativas"] = responses_;
     setQuestionary(copyResponses);
+    if (!isValidResponse) {
+      alert(
+        "Respuesta incorrecta" +
+          "\n No te preocupes. Puedes intertarlo una vez más"
+      );
+    }
   };
 
   const checkAnswers = () => {
@@ -101,7 +112,11 @@ const Questionary = () => {
 
   return (
     <div>
-      <Link onClick={() => {}}>
+      <Link
+        onClick={() => {
+          history.goBack();
+        }}
+      >
         <img src={ArrowDoubleLeft} />
         <span>Volver</span>
       </Link>
@@ -140,21 +155,24 @@ const Questionary = () => {
               index + 1 < 9 ? `0${index + 1}` : `${index + 1}`
             }.- ${item?.pregunta}`}</Title>
             {item.alternativas &&
-              item.alternativas.map((item_, index_) => (
-                <Alternative
-                  key={`a${index_}`}
-                  onClick={() => onSelectedAlternative(index, index_)}
-                >
-                  {item_?.respuesta ? (
-                    <img src={RadioSelected} />
-                  ) : (
-                    <img src={RadioNormal} />
-                  )}
-                  <Paragraph style={{ marginLeft: "4px" }}>
-                    {item_?.alternativa}
-                  </Paragraph>
-                </Alternative>
-              ))}
+              item.alternativas.map(
+                (item_, index_) =>
+                  item_?.alternativa && (
+                    <Alternative
+                      key={`a${index_}`}
+                      onClick={() => onSelectedAlternative(index, index_)}
+                    >
+                      {item_?.respuesta ? (
+                        <img src={RadioSelected} />
+                      ) : (
+                        <img src={RadioNormal} />
+                      )}
+                      <Paragraph style={{ marginLeft: "4px" }}>
+                        {item_?.alternativa}
+                      </Paragraph>
+                    </Alternative>
+                  )
+              )}
           </CardQuestion>
         ))}
       {showQuestions && (

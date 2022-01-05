@@ -2,6 +2,36 @@ import { useState } from "react";
 import axios from "axios";
 import { API_URI } from "@commons/constants/urls";
 
+export const useFetchCourse = () => {
+  const [response, setResponse] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setloading] = useState(true);
+
+  const fetchData = (token, idCurso) => {
+    const payload = new FormData();
+    payload.append("token", token);
+    payload.append("idCurso", idCurso);
+    axios
+      .post(`${API_URI}/user/get_course`, payload)
+      .then((res) => {
+        setResponse(res.data);
+      })
+      .catch((err) => {
+        setError(err);
+      })
+      .finally(() => {
+        setloading(false);
+      });
+  };
+
+  return {
+    fetch: fetchData,
+    data: response,
+    loading,
+    error,
+  };
+};
+
 export const useFetchLessons = () => {
   const [response, setResponse] = useState(null);
   const [error, setError] = useState("");

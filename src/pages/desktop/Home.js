@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { sumDurations } from "@commons/utils";
 import {
+  useFetchCourse,
   useFetchLessons,
   useFetchTracking,
   useFetchQuestions,
@@ -51,7 +52,7 @@ const ContentRight = styled.div`
   margin: 0px 15px;
   padding: 16px;
   overflow: scroll;
-  height: 100vh;
+  height: 120vh;
   ::-webkit-scrollbar {
     -webkit-appearance: none;
     width: 7px;
@@ -82,24 +83,26 @@ const Home = () => {
   const [token, setToken] = useQueryParam("token", StringParam);
   const [idCurso, setIdCurso] = useQueryParam("idCurso", StringParam);
 
+  const [disabledButton, setDisabledButton] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isSelectedVideo, setIsSelectedVideo] = useState(false);
   const videoRef = useRef(null);
-  const [courses, setCourses] = useState([]);
+  const [lessons, setLessons] = useState([]);
   const [videoSelected, setVideoSelected] = useState({ item: null, index: -1 });
   const [duration, setDuration] = useState();
   const [questionary, setQuestionary] = useState([]);
-  const { fetch: fetchVideoByCourse, data: dataCourses } = useFetchLessons();
+  const { fetch: fetchVideoByCourse, data: dataLessons } = useFetchLessons();
   const { fetch: fetchTracking, data: dataTracking } = useFetchTracking();
   const { fetch: fetchQuestions, data: dataQuestions } = useFetchQuestions();
+  const { fetch: fetchCourse, data: dataInfoCourse } = useFetchCourse();
 
   useEffect(() => {
+    fetchCourse(token, idCurso);
     fetchVideoByCourse(token, idCurso);
   }, []);
 
   useEffect(() => {
     if (dataTracking?.success && isEnd) {
-      console.log("SEND QUESTIONS DATAAAA");
       isEnd = false;
       setIsLoading(true);
       fetchQuestions(
@@ -123,15 +126,17 @@ const Home = () => {
   }, [dataQuestions]);
 
   useEffect(() => {
-    if (dataCourses?.success) {
-      const data = dataCourses?.data;
+    if (dataLessons && dataLessons?.success) {
+      const data = dataLessons?.data;
       let find = null;
       if (data.length > 0) {
         if (videoSelected?.item) {
-          find = {
-            index: videoSelected?.index + 1,
-            item: data[videoSelected?.index + 1],
-          };
+          if (videoSelected?.index + 1 < data?.length) {
+            find = {
+              index: videoSelected?.index + 1,
+              item: data[videoSelected?.index + 1],
+            };
+          }
         } else {
           find = {
             index: 0,
@@ -139,16 +144,19 @@ const Home = () => {
           };
         }
       }
-      setCourses(data);
-      const sumDurations_ = sumDurations(dataCourses?.data);
+      setDisabledButton(
+        data?.find((item) => item.completoVista !== "SI") ? true : false
+      );
+      setLessons(data);
+      const sumDurations_ = sumDurations(dataLessons?.data);
       setDuration(sumDurations_.formatted);
       setVideoSelected(find);
     }
-  }, [dataCourses]);
+  }, [dataLessons]);
 
   const handleOnProgress = (e) => {
     const currentTime = e.playedSeconds;
-    if (isPlay) {
+    if (isPlay && isSelectedVideo) {
       if (currentTime > timeOutFetch) {
         timeOutFetch = currentTime + timeOutFetch;
         fetchTracking(
@@ -169,7 +177,7 @@ const Home = () => {
 
   const handleOnEnded = () => {
     const currentTime = videoRef?.current.getDuration();
-    if (isPlay) {
+    if (isPlay && isSelectedVideo) {
       isPlay = false;
       isEnd = true;
       fetchTracking(
@@ -229,10 +237,15 @@ const Home = () => {
                   controls
                   src={
                     !isSelectedVideo
-                      ? courses.length && `https://${courses[0].rutaPublica}`
+                      ? dataInfoCourse?.data?.length &&
+                        `https://${dataInfoCourse?.data[0].thumbnailRutaPublica}`
                       : `https://${videoSelected?.item?.rutaPublica}`
                   }
-                  seek={videoSelected?.item?.ultimoMinutoVisto}
+                  seek={
+                    !isSelectedVideo
+                      ? 0
+                      : videoSelected?.item?.ultimoMinutoVisto
+                  }
                   onProgress={handleOnProgress}
                   onPlay={handleOnPlay}
                   onEnded={handleOnEnded}
@@ -253,31 +266,39 @@ const Home = () => {
           </div>
           <Title type="lg">
             {!isSelectedVideo
-              ? courses.length && `${courses[0].nombreCurso}`
-              : `Lección ${videoSelected?.item?.index || 1}: ${
+              ? dataInfoCourse?.data?.length &&
+                `${dataInfoCourse?.data[0].nombreCurso}`
+              : `Lección ${videoSelected?.index + 1 || 1}: ${
                   videoSelected?.item?.nombreVideo || ""
                 }`}
           </Title>
 
-          <>
-            <ContainerCards>
-              <CardInfo
-                icon={Time}
-                title="Duración del curso"
-                subTitle={duration}
-              />
-              <CardInfo
-                icon={Lessons}
-                title="Lecciones"
-                subTitle={`${courses.length} ${
-                  courses.length > 1 ? "lecciones" : "leccion"
-                }`}
-              />
-            </ContainerCards>
-            <Paragraph>
-              {courses.length ? courses[0].descripcionCurso : ""}
+          {!isSelectedVideo && (
+            <>
+              <ContainerCards>
+                <CardInfo
+                  icon={Time}
+                  title="Duración del curso"
+                  subTitle={duration}
+                />
+                <CardInfo
+                  icon={Lessons}
+                  title="Lecciones"
+                  subTitle={`${lessons.length} ${
+                    lessons.length > 1 ? "lecciones" : "leccion"
+                  }`}
+                />
+              </ContainerCards>
+              <Paragraph>
+                {lessons.length ? lessons[0].descripcionCurso : ""}
+              </Paragraph>
+            </>
+          )}
+          {isSelectedVideo && (
+            <Paragraph style={{ fontSize: "18px", lineHeight: "28px" }}>
+              {`Duración: ${videoSelected?.item?.duracion}/ Video`}
             </Paragraph>
-          </>
+          )}
           <Link
             style={{ color: "#333333", fontWeight: 700, marginTop: "20px" }}
             onClick={() => {
@@ -291,24 +312,20 @@ const Home = () => {
         </ContentLeft>
         <ContentRight>
           <Steps
-            lessons={courses}
+            lessons={lessons}
             disabledClose
             videoSelected={videoSelected}
             onCallbackVideoSelected={(item, index) => {
-              console.log("CALLBACKKKKK", item);
-              setIsSelectedVideo(true);
-              setVideoSelected({
-                item,
-                index,
-              });
+              
+                setIsSelectedVideo(true);
+                setVideoSelected({
+                  item,
+                  index,
+                });
             }}
           />
           <Button
-            disabled={
-              courses?.find((item) => item.completoVista !== "SI")
-                ? true
-                : false
-            }
+            disabled={disabledButton}
             onClick={onClickQuestionary}
             label="OBTENER CERTIFICADO"
             iconLeft={LockedButton}

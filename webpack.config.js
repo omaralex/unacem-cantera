@@ -8,7 +8,9 @@ module.exports = {
     vendor: "./src/index.js",
   },
   mode: "development",
-  watch: true,
+  resolve: {
+    extensions: [".js", ".jsx"],
+  },
   module: {
     rules: [
       // Bable Loader
@@ -82,6 +84,6 @@ module.exports = {
   ],
   output: {
     filename: "bundle.js",
-    path: path.resolve(__dirname, "dist"),
+    path: path.resolve(__dirname, "public"),
   },
 };

@@ -43,6 +43,18 @@ const Content = styled.div`
 const ContentLeft = styled.div`
   width: 60%;
   margin-right: 25px;
+  max-height: 700px;
+  overflow: scroll;
+  ::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+  }
 `;
 
 const ContentRight = styled.div`
@@ -68,6 +80,7 @@ const Questionary = () => {
   const [showQuestions, setShowQuestions] = useState(false);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     fetchQuestionsCourse(token, idCurso);
   }, []);
 
@@ -101,15 +114,25 @@ const Questionary = () => {
   }, [dataResponseQuestionary]);
 
   const onSelectedAlternative = (index, index_) => {
+    let isValidResponse = true;
     const responses_ = questionary[index].alternativas.map((element, i) => {
-      if (i === index_) element["respuesta"] = true;
-      else element["respuesta"] = false;
+      if (i === index_) {
+        isValidResponse = element.esRespuestaCorrecta === "true";
+        element["respuesta"] = true;
+      } else {
+        element["respuesta"] = false;
+      }
       return element;
     });
-
     let copyResponses = [...questionary];
     copyResponses[index]["alternativas"] = responses_;
     setQuestionary(copyResponses);
+    if (!isValidResponse) {
+      alert(
+        "Respuesta incorrecta" +
+          "\n No te preocupes. Puedes intertarlo una vez más"
+      );
+    }
   };
 
   const checkAnswers = () => {
@@ -117,11 +140,13 @@ const Questionary = () => {
     //history.push("/certificate");
   };
 
-  console.log("questionary", questionary);
-
   return (
     <div>
-      <Link onClick={() => {}}>
+      <Link
+        onClick={() => {
+          history.goBack();
+        }}
+      >
         <img src={ArrowDoubleLeft} />
         <span>Volver</span>
       </Link>
@@ -162,20 +187,23 @@ const Questionary = () => {
                   index + 1 < 9 ? `0${index + 1}` : `${index + 1}`
                 }.- ${item?.pregunta}`}</Title>
                 {item.alternativas &&
-                  item.alternativas.map((item_, index_) => (
-                    <Alternative
-                      onClick={() => onSelectedAlternative(index, index_)}
-                    >
-                      {item_?.respuesta ? (
-                        <img src={RadioSelected} />
-                      ) : (
-                        <img src={RadioNormal} />
-                      )}
-                      <Paragraph style={{ marginLeft: "4px" }}>
-                        {item_?.alternativa}
-                      </Paragraph>
-                    </Alternative>
-                  ))}
+                  item.alternativas.map(
+                    (item_, index_) =>
+                      item_?.alternativa && (
+                        <Alternative
+                          onClick={() => onSelectedAlternative(index, index_)}
+                        >
+                          {item_?.respuesta ? (
+                            <img src={RadioSelected} />
+                          ) : (
+                            <img src={RadioNormal} />
+                          )}
+                          <Paragraph style={{ marginLeft: "4px" }}>
+                            {item_?.alternativa}
+                          </Paragraph>
+                        </Alternative>
+                      )
+                  )}
               </CardQuestion>
             ))}
           {showQuestions && (
@@ -197,7 +225,11 @@ const Questionary = () => {
         </ContentLeft>
         <ContentRight>
           <img
-            style={{ maxWidth: "300px", borderRadius: "8px" }}
+            style={{
+              maxWidth: "300px",
+              maxHeight: "700px",
+              borderRadius: "8px",
+            }}
             src={BackgroundQuestionary}
           />
         </ContentRight>

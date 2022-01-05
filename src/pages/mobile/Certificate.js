@@ -6,7 +6,7 @@ import Button from "@components/Button";
 import Title from "@components/Title";
 import ArrowDoubleRight from "@assets/images/arrow-double-right.svg";
 import ArrowDoubleLeft from "@assets/images/arrow-double-left.svg";
-import { useLocation } from "react-router-dom";
+import { useLocation, useHistory } from "react-router-dom";
 import { validateEmail } from "@commons/utils";
 
 const Paragraph = styled.p`
@@ -28,6 +28,8 @@ const StyledInput = styled.input`
 
 const Certificate = () => {
   const location = useLocation();
+  const history = useHistory();
+
   const token = location?.state?.token;
   const idCurso = location?.state?.idCurso;
   const [valueInput, setValueInput] = useState("");
@@ -62,7 +64,6 @@ const Certificate = () => {
   }, [valueInput]);
 
   const sendEmail = () => {
-    console.log("SEND EMAIL", valueInput);
     if (valueInput) {
       fetchSendEmail(token, idCurso, valueInput);
     } else {
@@ -78,8 +79,7 @@ const Certificate = () => {
     <div>
       <Link
         onClick={() => {
-          window.parent.location.href =
-            "https://unacemcantera.com.pe/capacitaciones/";
+          history.goBack();
         }}
       >
         <img src={ArrowDoubleLeft} /> <span>Volver</span>

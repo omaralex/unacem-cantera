@@ -44,8 +44,9 @@ const Lesson = () => {
 
   const location = useLocation();
   const history = useHistory();
+  const [disabledButton, setDisabledButton] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [courses, setCourses] = useState([]);
+  const [lessons, setLessons] = useState([]);
   const [videoSelected, setVideoSelected] = useState({ item: null, index: -1 });
   const [questionary, setQuestionary] = useState([]);
   const [duration, setDuration] = useState();
@@ -54,7 +55,7 @@ const Lesson = () => {
   const idCurso = location?.state?.idCurso;
   const nombreCurso = location?.state?.nombreCurso;
 
-  const { fetch: fetchVideoByCourse, data: dataCourses } = useFetchLessons();
+  const { fetch: fetchVideoByCourse, data: dataLessons } = useFetchLessons();
   const { fetch: fetchTracking, data: dataTracking } = useFetchTracking();
   const { fetch: fetchQuestions, data: dataQuestions } = useFetchQuestions();
 
@@ -64,7 +65,6 @@ const Lesson = () => {
 
   useEffect(() => {
     if (dataTracking?.success && isEnd) {
-      console.log("SEND QUESTIONS DATAAAA");
       isEnd = false;
       setIsLoading(true);
       fetchQuestions(
@@ -88,15 +88,17 @@ const Lesson = () => {
   }, [dataQuestions]);
 
   useEffect(() => {
-    if (dataCourses?.success) {
-      const data = dataCourses?.data;
+    if (dataLessons?.success) {
+      const data = dataLessons?.data;
       let find = null;
       if (data.length > 0) {
         if (videoSelected?.item) {
-          find = {
-            index: videoSelected?.index + 1,
-            item: data[videoSelected?.index + 1],
-          };
+          if (videoSelected?.index + 1 < data?.length) {
+            find = {
+              index: videoSelected?.index + 1,
+              item: data[videoSelected?.index + 1],
+            };
+          }
         } else {
           find = {
             index: 0,
@@ -104,14 +106,16 @@ const Lesson = () => {
           };
         }
       }
-      console.log("FINDDDD", find);
-      setCourses(data);
-      const sumDurations_ = sumDurations(dataCourses?.data);
+      setDisabledButton(
+        data?.find((item) => item.completoVista !== "SI") ? true : false
+      );
+      setLessons(data);
+      const sumDurations_ = sumDurations(dataLessons?.data);
       setDuration(sumDurations_.formatted);
       setSeconds(sumDurations_.seconds);
       setVideoSelected(find);
     }
-  }, [dataCourses]);
+  }, [dataLessons]);
 
   const onFinished = () => {
     setQuestionary([]);
@@ -167,7 +171,11 @@ const Lesson = () => {
 
   return (
     <div ref={videoContainer}>
-      <Link onClick={() => {}}>
+      <Link
+        onClick={() => {
+          history.goBack();
+        }}
+      >
         <img src={ArrowDoubleLeft} />
         <span>Volver</span>
       </Link>
@@ -202,7 +210,7 @@ const Lesson = () => {
       </div>
       {videoSelected?.item && (
         <Title type="lg">
-          {`Lección ${videoSelected?.item?.index || 1}: ${
+          {`Lección ${videoSelected?.index + 1 || 1}: ${
             videoSelected?.item?.nombreVideo || ""
           }`}
         </Title>
@@ -210,15 +218,16 @@ const Lesson = () => {
 
       <>
         <Steps
-          lessons={courses}
+          lessons={lessons}
           videoSelected={videoSelected}
           onCallbackVideoSelected={(item, index) => {
-            console.log("CALLBACKKKKK", item);
-            videoContainer.current.scrollIntoView({ behavior: "smooth" });
-            setVideoSelected({
-              item,
-              index,
-            });
+            
+              videoContainer.current.scrollIntoView({ behavior: "smooth" });
+              setVideoSelected({
+                item,
+                index,
+              });
+        
           }}
         />
       </>
@@ -226,9 +235,7 @@ const Lesson = () => {
       <>
         <Button
           onClick={onClickQuestionary}
-          disabled={
-            courses?.find((item) => item.completoVista !== "SI") ? true : false
-          }
+          disabled={disabledButton}
           label="OBTENER CERTIFICADO"
           iconLeft={LockedButton}
         />

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { sumDurations } from "@commons/utils";
-import { useFetchLessons } from "@hooks/useCourses";
+import { useFetchLessons, useFetchCourse } from "@hooks/useCourses";
 import { StringParam, useQueryParam } from "use-query-params";
 import { useHistory } from "react-router-dom";
 import styled from "styled-components";
@@ -33,18 +33,20 @@ const Home = () => {
   const [idCurso, setIdCurso] = useQueryParam("idCurso", StringParam);
 
   const videoRef = useRef(null);
-  const [courses, setCourses] = useState([]);
+  const [lessons, setLessons] = useState([]);
   const [videoSelected, setVideoSelected] = useState({ item: null, index: -1 });
   const [duration, setDuration] = useState();
-  const { fetch: fetchVideoByCourse, data: dataCourses } = useFetchLessons();
+  const { fetch: fetchVideoByCourse, data: dataLessons } = useFetchLessons();
+  const { fetch: fetchCourse, data: dataInfoCourse } = useFetchCourse();
 
   useEffect(() => {
+    fetchCourse(token, idCurso);
     fetchVideoByCourse(token, idCurso);
   }, []);
 
   useEffect(() => {
-    if (dataCourses?.success) {
-      const data = dataCourses?.data;
+    if (dataLessons?.success) {
+      const data = dataLessons?.data;
       let find = null;
       if (data.length > 0) {
         if (videoSelected?.item) {
@@ -59,12 +61,12 @@ const Home = () => {
           };
         }
       }
-      setCourses(data);
-      const sumDurations_ = sumDurations(dataCourses?.data);
+      setLessons(data);
+      const sumDurations_ = sumDurations(dataLessons?.data);
       setDuration(sumDurations_.formatted);
       setVideoSelected(find);
     }
-  }, [dataCourses]);
+  }, [dataLessons]);
 
   return (
     <div>
@@ -79,18 +81,18 @@ const Home = () => {
       </Link>
       <>
         <div style={{ margin: "16px 0px" }}>
-          {videoSelected?.item ? (
+          {dataInfoCourse?.data?.length ? (
             <Video
               innerRef={videoRef}
               width="100%"
               height="30%"
               controls
-              src={`https://${videoSelected?.item?.rutaPublica}`}
+              src={`https://${dataInfoCourse?.data[0].thumbnailRutaPublica}`}
             />
           ) : null}
         </div>
-        {videoSelected?.item && (
-          <Title type="lg">{videoSelected?.item?.nombreCurso || ""}</Title>
+        {dataInfoCourse?.data?.length && (
+          <Title type="lg">{dataInfoCourse?.data[0].nombreCurso || ""}</Title>
         )}
         <>
           <div style={{ marginTop: "18px" }}>
@@ -118,13 +120,13 @@ const Home = () => {
             <CardInfo
               icon={Lessons}
               title="Lecciones"
-              subTitle={`${courses.length} ${
-                courses.length > 1 ? "lecciones" : "leccion"
+              subTitle={`${lessons.length} ${
+                lessons.length > 1 ? "lecciones" : "leccion"
               }`}
             />
           </ContainerCards>
           <Paragraph>
-            {courses.length ? courses[0].descripcionCurso : ""}
+            {dataInfoCourse?.data?.length ? dataInfoCourse?.data[0].descripcionCurso : ""}
           </Paragraph>
         </>
         <Link

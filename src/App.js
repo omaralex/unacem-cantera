@@ -5,8 +5,6 @@ import { QueryParamProvider } from "use-query-params";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import theme from "./theme";
 import AppStyles from "./theme/appStyles";
-import "./scss/style.scss";
-import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 
 const App = () => {
   return (
